@@ -29,6 +29,18 @@ class NumberMatchBoard {
     return true;
   }
 
+  /// Returns the first currently legal pair, without changing the board.
+  /// Hints are free and never require watching an advertisement.
+  List<int>? findHint() {
+    for (var a = 0; a < cells.length; a++) {
+      if (cells[a] == null) continue;
+      for (var b = a + 1; b < cells.length; b++) {
+        if (isPair(a, b)) return [a, b];
+      }
+    }
+    return null;
+  }
+
   bool match(int a, int b) {
     if (!isPair(a, b)) return false;
     cells[a] = null;
@@ -79,9 +91,11 @@ class _NumberMatchScreenState extends State<NumberMatchScreen> {
   int level = 0;
   late NumberMatchBoard board = createBoard(level);
   int? selected;
+  List<int> highlightedHint = const [];
 
   void tapCell(int index) {
     setState(() {
+      highlightedHint = const [];
       if (selected == null) {
         selected = index;
       } else if (selected == index) {
@@ -134,7 +148,7 @@ class _NumberMatchScreenState extends State<NumberMatchScreen> {
                             decoration: BoxDecoration(
                               color: value == null
                                   ? Colors.grey.shade100
-                                  : selected == index
+                                  : (selected == index || highlightedHint.contains(index))
                                       ? Colors.deepPurple.shade200
                                       : Colors.deepPurple.shade50,
                               border: Border.all(color: Colors.deepPurple.shade200),
@@ -152,6 +166,18 @@ class _NumberMatchScreenState extends State<NumberMatchScreen> {
                   const Text('Board cleared! Well done.', key: ValueKey('completed')),
                 const SizedBox(height: 12),
                 Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.center, children: [
+                  OutlinedButton(
+                    onPressed: board.completed ? null : () => setState(() {
+                      highlightedHint = board.findHint() ?? const [];
+                      selected = null;
+                      if (highlightedHint.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('No available pairs. Try adding numbers.')),
+                        );
+                      }
+                    }),
+                    child: const Text('Free hint'),
+                  ),
                   OutlinedButton(
                     onPressed: board.completed ? null : () => setState(() {
                       board.appendRemaining();
