@@ -1,0 +1,1 @@
+Eşit ya da toplamı 10 olan çiftleri eşleştir!
